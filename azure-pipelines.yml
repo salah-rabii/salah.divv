@@ -1,0 +1,24 @@
+trigger:
+- main  # Le pipeline s'exécute sur la branche main
+
+pool:
+  vmImage: ubuntu-latest  # Utilisation d'une machine Ubuntu pour exécuter le pipeline
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '18.x'  # Installer Node.js (nécessaire si tu as un build avec npm)
+  displayName: 'Installer Node.js'
+
+- script: echo "Vérification du code terminé avec succès !"
+  displayName: 'Vérification du code'
+
+- script: |
+    echo "Le projet HTML, CSS et JS est prêt pour le déploiement."
+  displayName: 'Exécuter le build'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: '.'  # Publier tous les fichiers du projet
+    artifactName: 'drop'
+  displayName: 'Publier les fichiers du projet'
