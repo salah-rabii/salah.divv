@@ -1,24 +1,59 @@
 trigger:
-- main  # Le pipeline s'exécute sur la branche main
+- main
 
 pool:
-  vmImage: ubuntu-latest  # Utilisation d'une machine Ubuntu pour exécuter le pipeline
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureStaticWebAppToken: $(azureStaticWebAppToken) # Optional for deployment
 
 steps:
+- checkout: self
+
 - task: NodeTool@0
   inputs:
-    versionSpec: '18.x'  # Installer Node.js (nécessaire si tu as un build avec npm)
-  displayName: 'Installer Node.js'
-
-- script: echo "Vérification du code terminé avec succès !"
-  displayName: 'Vérification du code'
+    versionSpec: '18.x'
+  displayName: 'Install Node.js'
 
 - script: |
-    echo "Le projet HTML, CSS et JS est prêt pour le déploiement."
-  displayName: 'Exécuter le build'
+    npm install -g eslint
+    npm install -g stylelint
+    npm install -g htmlhint
+  displayName: 'Install Linters'
 
-- task: PublishBuildArtifacts@1
+- script: |
+    eslint "js/*.js"
+  displayName: 'Lint JavaScript'
+  continueOnError: true
+
+- script: |
+    stylelint "css/*.css"
+  displayName: 'Lint CSS'
+  continueOnError: true
+
+- script: |
+    htmlhint "*.html"
+  displayName: 'Lint HTML'
+  continueOnError: true
+
+- task: CmdLine@2
   inputs:
-    pathToPublish: '.'  # Publier tous les fichiers du projet
-    artifactName: 'drop'
-  displayName: 'Publier les fichiers du projet'
+    script: |
+      npm install -g @lhci/cli
+      lhci autorun
+  displayName: 'Lighthouse Audit'
+  continueOnError: true
+
+- task: CmdLine@2
+  inputs:
+    script: |
+      npm audit
+  displayName: 'NPM Audit'
+  continueOnError: true
+
+# Uncomment this section if you want to deploy to Azure Static Web Apps
+# - task: AzureStaticWebApp@0
+#   inputs:
+#     app_location: "/"
+#     output_location: "dist"
+#     azure_static_web_apps_api_token: $(azureStaticWebAppToken)
