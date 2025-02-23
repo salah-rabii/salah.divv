@@ -1,0 +1,53 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureStaticWebAppToken: $(azureStaticWebAppToken) # Optional for deployment
+
+steps:
+- checkout: self
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: '18.x'
+  displayName: 'Install Node.js'
+
+- script: |
+    npm install -g eslint
+    npm install -g stylelint
+    npm install -g htmlhint
+  displayName: 'Install Linters'
+
+- script: |
+    eslint "js/*.js"
+  displayName: 'Lint JavaScript'
+  continueOnError: true
+
+- script: |
+    stylelint "css/*.css"
+  displayName: 'Lint CSS'
+  continueOnError: true
+
+- script: |
+    htmlhint "*.html"
+  displayName: 'Lint HTML'
+  continueOnError: true
+
+- task: CmdLine@2
+  inputs:
+    script: |
+      npm install -g @lhci/cli
+      lhci autorun
+  displayName: 'Lighthouse Audit'
+  continueOnError: true
+
+- task: CmdLine@2
+  inputs:
+    script: |
+      npm audit
+  displayName: 'NPM Audit'
+  continueOnError: true
+
